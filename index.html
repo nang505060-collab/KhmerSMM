@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KhmerSMM - Professional SMM Panel Cambodia</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRCode JS Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased">
+
+    <!-- Top Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl font-black text-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">KhmerSMM</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Language Switcher -->
+                <button onclick="toggleLanguage()" id="langBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sm rounded-lg border border-slate-700 transition">
+                    🇰🇭 KH / EN
+                </button>
+                <!-- User Balance Badge -->
+                <div class="hidden sm:flex items-center bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 space-x-2">
+                    <i class="fa-solid fa-wallet text-amber-400"></i>
+                    <span class="text-xs text-slate-400" data-translate="balance">Balance:</span>
+                    <span id="userBalance" class="font-bold text-emerald-400">$10.50</span>
+                </div>
+                <!-- User Profile -->
+                <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=MonSamnang" alt="User" class="w-7 h-7 rounded-full bg-indigo-500">
+                    <span class="text-sm font-medium hidden md:inline">Mon Samnang</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <!-- Sidebar Navigation -->
+            <aside class="lg:col-span-1 space-y-2">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('new-order')" id="nav-new-order" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+                            <i class="fa-solid fa-cart-plus w-5"></i>
+                            <span data-translate="new_order">New Order</span>
+                        </button>
+                        <button onclick="switchTab('services')" id="nav-services" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                            <i class="fa-solid fa-list-ul w-5"></i>
+                            <span data-translate="services">Services</span>
+                        </button>
+                        <button onclick="switchTab('orders')" id="nav-orders" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                            <i class="fa-solid fa-clock-rotate-left w-5"></i>
+                            <span data-translate="orders">Orders History</span>
+                        </button>
+                        <button onclick="switchTab('add-funds')" id="nav-add-funds" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                            <i class="fa-solid fa-wallet w-5"></i>
+                            <span data-translate="add_funds">Add Funds (Bakong KHQR)</span>
+                        </button>
+                        <button onclick="switchTab('api')" id="nav-api" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                            <i class="fa-solid fa-code w-5"></i>
+                            <span data-translate="api_docs">API Documentation</span>
+                        </button>
+                        <button onclick="switchTab('tickets')" id="nav-tickets" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                            <i class="fa-solid fa-headset w-5"></i>
+                            <span data-translate="support_tickets">Support Tickets</span>
+                        </button>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="lg:col-span-3">
+                
+                <!-- 1. NEW ORDER TAB -->
+                <div id="tab-new-order" class="space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+                        <h2 class="text-xl font-bold mb-6 flex items-center space-x-2">
+                            <i class="fa-solid fa-cart-plus text-indigo-400"></i>
+                            <span data-translate="new_order_title">Create New Order</span>
+                        </h2>
+
+                        <form id="orderForm" onsubmit="handleOrderSubmit(event)" class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="category">Category</label>
+                                <select id="orderCategory" onchange="updateServices()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    <option value="fb">📘 Facebook Services (Page Likes, Followers)</option>
+                                    <option value="tiktok">🎵 TikTok Services (Views, Followers, Likes)</option>
+                                    <option value="telegram">✈️ Telegram Services (Channel Members)</option>
+                                    <option value="ig">📸 Instagram Services (Followers, Likes)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="service">Service</label>
+                                <select id="orderService" onchange="updateServiceDetails()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="link">Target Link / URL</label>
+                                <input type="url" id="orderLink" required placeholder="https://..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="quantity">Quantity</label>
+                                    <input type="number" id="orderQuantity" value="1000" min="100" max="100000" oninput="calculateTotal()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="total_charge">Total Charge ($)</label>
+                                    <input type="text" id="orderTotal" readonly value="$1.20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-emerald-400 font-bold">
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 text-sm text-slate-400" id="serviceDescription">
+                                Description: Fast delivery, high quality, 30 days refill guarantee.
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> <span data-translate="submit_order">Place Order</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 2. SERVICES TAB -->
+                <div id="tab-services" class="hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h2 class="text-xl font-bold mb-4" data-translate="services_price_list">Services Price List</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-300">
+                                <thead class="bg-slate-800 text-slate-200 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">ID</th>
+                                        <th class="p-3" data-translate="service_name">Service Name</th>
+                                        <th class="p-3" data-translate="rate_per_1k">Rate per 1,000</th>
+                                        <th class="p-3" data-translate="min_max">Min / Max</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800" id="servicesTableBody">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. ORDERS HISTORY TAB -->
+                <div id="tab-orders" class="hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h2 class="text-xl font-bold mb-4" data-translate="orders_history">Orders History</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-300">
+                                <thead class="bg-slate-800 text-slate-200 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">ID</th>
+                                        <th class="p-3" data-translate="date">Date</th>
+                                        <th class="p-3" data-translate="link">Link</th>
+                                        <th class="p-3" data-translate="charge">Charge</th>
+                                        <th class="p-3" data-translate="quantity">Qty</th>
+                                        <th class="p-3" data-translate="status">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800" id="ordersTableBody">
+                                    <tr>
+                                        <td class="p-3">#10592</td>
+                                        <td class="p-3 text-slate-400">2026-09-21</td>
+                                        <td class="p-3 truncate max-w-xs">https://tiktok.com/@samnang</td>
+                                        <td class="p-3 text-emerald-400">$0.80</td>
+                                        <td class="p-3">1,000</td>
+                                        <td class="p-3"><span class="px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-semibold">Completed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. ADD FUNDS (BAKONG KHQR) TAB -->
+                <div id="tab-add-funds" class="hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl max-w-xl mx-auto">
+                        <div class="text-center mb-6">
+                            <div class="inline-block bg-red-500/10 text-red-500 px-4 py-1.5 rounded-full text-sm font-bold mb-2">
+                                <i class="fa-solid fa-qrcode mr-1"></i> Bakong KHQR Automatic
+                            </div>
+                            <h2 class="text-2xl font-bold" data-translate="add_funds_title">Deposit via Bakong KHQR</h2>
+                            <p class="text-sm text-slate-400 mt-1">Scan with any Cambodian Banking App (ABA, Wing, TrueMoney, etc.)</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2" data-translate="amount_usd">Amount in USD ($)</label>
+                                <input type="number" id="depositAmount" value="5.00" min="1" step="0.5" oninput="generateKHQR()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 font-bold text-lg">
+                            </div>
+
+                            <!-- KHQR Card -->
+                            <div class="bg-white rounded-2xl p-6 text-slate-900 shadow-2xl flex flex-col items-center space-y-4 relative overflow-hidden">
+                                <div class="absolute top-3 left-4 flex items-center space-x-2">
+                                    <span class="font-black text-red-600 tracking-wider">KHQR</span>
+                                    <span class="text-xs text-slate-500 font-semibold uppercase">National Bank of Cambodia</span>
+                                </div>
+                                <div class="mt-6 bg-slate-100 p-4 rounded-xl border border-slate-200">
+                                    <div id="qrcode"></div>
+                                </div>
+                                <div class="text-center space-y-1">
+                                    <p class="text-xs text-slate-500 uppercase font-semibold">Account Name / ឈ្មោះគណនី</p>
+                                    <p class="text-lg font-bold text-slate-900 uppercase">MON SAMNANG</p>
+                                    <p class="text-xs text-slate-500">Bakong ID: <span class="font-mono font-bold text-indigo-600">samnang_mon@bkrt</span></p>
+                                </div>
+                                <div class="w-full bg-red-50 border border-red-200 rounded-xl p-3 flex justify-between items-center">
+                                    <span class="text-sm font-medium text-red-700" data-translate="total_to_pay">Total to Pay:</span>
+                                    <span id="qrAmountDisplay" class="text-lg font-black text-red-600">$5.00</span>
+                                </div>
+                            </div>
+
+                            <button onclick="verifyDeposit()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-emerald-600/30 transition">
+                                <i class="fa-solid fa-circle-check mr-2"></i> <span data-translate="verify_payment">Check / Verify Payment</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. API DOCUMENTATION TAB -->
+                <div id="tab-api" class="hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+                        <h2 class="text-xl font-bold" data-translate="api_docs_title">SMM API Documentation</h2>
+                        <div class="space-y-4 text-sm text-slate-300">
+                            <p>You can connect your website or software to our automated panel using our high-speed API.</p>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                                <p class="text-slate-400 font-semibold">API URL:</p>
+                                <code class="text-cyan-400 block bg-slate-900 p-2 rounded">https://khmersmm.com/api/v2</code>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                                <p class="text-slate-400 font-semibold">API Key:</p>
+                                <code class="text-amber-400 block bg-slate-900 p-2 rounded">sk_live_samnang9988776655443322</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. SUPPORT TICKETS TAB -->
+                <div id="tab-tickets" class="hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+                        <h2 class="text-xl font-bold" data-translate="support_tickets">Support Tickets</h2>
+                        <div class="space-y-4">
+                            <textarea placeholder="Describe your issue regarding orders, payments or API..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-indigo-500 h-32"></textarea>
+                            <button onclick="alert('Ticket submitted successfully! Our support team will reply shortly.')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition">Submit Ticket</button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Services Database
+        const servicesData = {
+            fb: [
+                { id: 101, name: "📘 Facebook Page Likes & Followers (High Quality)", rate: 1.20, min: 100, max: 50000, desc: "High quality page followers with 30 days refill guarantee." },
+                { id: 102, name: "📘 Facebook Post Likes (Real Users)", rate: 0.80, min: 50, max: 10000, desc: "Instant start, real-looking profile likes." }
+            ],
+            tiktok: [
+                { id: 201, name: "🎵 TikTok Video Views (Super Fast)", rate: 0.10, min: 1000, max: 1000000, desc: "Speed: 1M/day, instant start." },
+                { id: 202, name: "🎵 TikTok Followers (Global)", rate: 2.50, min: 100, max: 20000, desc: "Stable followers with high retention." }
+            ],
+            telegram: [
+                { id: 301, name: "✈️ Telegram Channel Members (Real & Active)", rate: 1.80, min: 100, max: 50000, desc: "Targeted channel members for crypto, business, or community." }
+            ],
+            ig: [
+                { id: 401, name: "📸 Instagram Followers (HQ + Refill)", rate: 1.50, min: 100, max: 30000, desc: "High quality Instagram followers." }
+            ]
+        };
+
+        let currentLang = 'km';
+        let userBalance = 10.50;
+
+        const translations = {
+            km: {
+                balance: "ទឹកប្រាក់:",
+                new_order: "បញ្ជាទិញសេវាកម្មថ្មី",
+                services: "បញ្ជីសេវាកម្ម",
+                orders: "ប្រវត្តិបញ្ជាទិញ",
+                add_funds: "បញ្ចូលទឹកប្រាក់ (Bakong KHQR)",
+                api_docs: "ឯកសារ API",
+                support_tickets: "ជំនួយអតិថិជន",
+                new_order_title: "បង្កើតការបញ្ជាទិញថ្មី",
+                category: "ប្រភេទសេវាកម្ម",
+                service: "សេវាកម្ម",
+                link: "តំណភ្ជាប់ (Link)",
+                quantity: "ចំនួន (Quantity)",
+                total_charge: "ទឹកប្រាក់សរុប ($)",
+                submit_order: "បញ្ជាក់ការបញ្ជាទិញ",
+                services_price_list: "តារាងតម្លៃសេវាកម្ម",
+                service_name: "ឈ្មោះសេវាកម្ម",
+                rate_per_1k: "តម្លៃក្នុង ១,០០០",
+                min_max: "អប្បបរមា / អតិបរមា",
+                orders_history: "ប្រវត្តិបញ្ជាទិញ",
+                date: "កាលបរិច្ឆេទ",
+                charge: "តម្លៃ",
+                status: "ស្ថានភាព",
+                add_funds_title: "បញ្ចូលទឹកប្រាក់តាមរយៈ Bakong KHQR",
+                amount_usd: "ទឹកប្រាក់ ($ USD)",
+                total_to_pay: "ទឹកប្រាក់ត្រូវបង់សរុប:",
+                verify_payment: "ផ្ទៀងផ្ទាត់ការទូទាត់ប្រាក់",
+                api_docs_title: "ឯកសារតភ្ជាប់ SMM API"
+            },
+            en: {
+                balance: "Balance:",
+                new_order: "New Order",
+                services: "Services",
+                orders: "Orders History",
+                add_funds: "Add Funds (Bakong KHQR)",
+                api_docs: "API Documentation",
+                support_tickets: "Support Tickets",
+                new_order_title: "Create New Order",
+                category: "Category",
+                service: "Service",
+                link: "Target Link / URL",
+                quantity: "Quantity",
+                total_charge: "Total Charge ($)",
+                submit_order: "Place Order",
+                services_price_list: "Services Price List",
+                service_name: "Service Name",
+                rate_per_1k: "Rate per 1,000",
+                min_max: "Min / Max",
+                orders_history: "Orders History",
+                date: "Date",
+                charge: "Charge",
+                status: "Status",
+                add_funds_title: "Deposit via Bakong KHQR",
+                amount_usd: "Amount in USD ($)",
+                total_to_pay: "Total to Pay:",
+                verify_payment: "Check / Verify Payment",
+                api_docs_title: "SMM API Documentation"
+            }
+        };
+
+        function switchTab(tabId) {
+            ['new-order', 'services', 'orders', 'add-funds', 'api', 'tickets'].forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                document.getElementById('nav-' + t).className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition";
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('nav-' + tabId).className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition";
+            
+            if(tabId === 'services') renderServicesTable();
+            if(tabId === 'add-funds') generateKHQR();
+        }
+
+        function updateServices() {
+            const cat = document.getElementById('orderCategory').value;
+            const servSelect = document.getElementById('orderService');
+            servSelect.innerHTML = '';
+            servicesData[cat].forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.rate;
+                opt.text = `${s.name} - $${s.rate.toFixed(2)} / 1k`;
+                opt.setAttribute('data-desc', s.desc);
+                servSelect.appendChild(opt);
+            });
+            updateServiceDetails();
+        }
+
+        function updateServiceDetails() {
+            const servSelect = document.getElementById('orderService');
+            const selectedOpt = servSelect.options[servSelect.selectedIndex];
+            if(selectedOpt) {
+                document.getElementById('serviceDescription').innerText = "Description: " + selectedOpt.getAttribute('data-desc');
+            }
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const rate = parseFloat(document.getElementById('orderService').value) || 0;
+            const qty = parseInt(document.getElementById('orderQuantity').value) || 0;
+            const total = (rate * qty) / 1000;
+            document.getElementById('orderTotal').value = "$" + total.toFixed(2);
+        }
+
+        function handleOrderSubmit(e) {
+            e.preventDefault();
+            alert("Order placed successfully! Order ID: #" + Math.floor(10000 + Math.random() * 90000));
+            document.getElementById('orderForm').reset();
+            updateServices();
+        }
+
+        function renderServicesTable() {
+            const tbody = document.getElementById('servicesTableBody');
+            tbody.innerHTML = '';
+            Object.keys(servicesData).forEach(cat => {
+                servicesData[cat].forEach(s => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-3 font-mono">#${s.id}</td>
+                            <td class="p-3 font-medium text-slate-200">${s.name}</td>
+                            <td class="p-3 text-emerald-400 font-bold">$${s.rate.toFixed(2)}</td>
+                            <td class="p-3 text-slate-400">${s.min} / ${s.max}</td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        let qrcodeInstance = null;
+        function generateKHQR() {
+            const amount = document.getElementById('depositAmount').value || "5.00";
+            document.getElementById('qrAmountDisplay').innerText = "$" + parseFloat(amount).toFixed(2);
+            
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            // Bakong KHQR payload simulation string with account samnang_mon@bkrt
+            const khqrPayload = `00020101021129370009kh.gov.nbc0115samnang_mon@bkrt0203053530384053038405404${parseFloat(amount).toFixed(2)}5802KH5910MON SAMNANG6009PhnomPenh6304`;
+            
+            qrcodeInstance = new QRCode(qrContainer, {
+                text: khqrPayload,
+                width: 180,
+                height: 180,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function verifyDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 5;
+            userBalance += amount;
+            document.getElementById('userBalance').innerText = "$" + userBalance.toFixed(2);
+            alert("Payment verified successfully! $" + amount.toFixed(2) + " has been added to your balance.");
+            switchTab('new-order');
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'km' ? 'en' : 'km';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if(translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            updateServices();
+        };
+    </script>
+</body>
+</html>
