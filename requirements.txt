@@ -1,0 +1,8 @@
+pyTelegramBotAPI
+requests
+flask
+qrcode
+pillow
+gtts
+moviepy
+SpeechRecognition
