@@ -45,7 +45,7 @@ from PIL import Image
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
 # ═══════════════════════════════════════════════════════════
-BOT_TOKEN          = "8692082628:AAG3SAQKRnOUznMfS0u1grlhTYDTpLD7wUc"
+BOT_TOKEN          = "7690815836:AAHYf6OXsw3U7fzNBUo78-DPJls0ErIDxO8"
 ADMIN_ID           = 8807182741
 
 # Gemini API Client Setup
