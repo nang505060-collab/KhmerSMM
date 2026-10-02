@@ -44,7 +44,7 @@ import qrcode
 from PIL import Image
 from gtts import gTTS
 import speech_recognition as sr
-from moviepy.editor import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
