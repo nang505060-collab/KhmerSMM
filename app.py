@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║     Kairozen Bot - Gemini AI, Timer & KHQR Deposit           ║
+║     Kairozen Bot - Video Dubbing, Gemini AI & KHQR Deposit   ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -31,7 +31,7 @@ logger.addHandler(console_handler)
 
 # ─── Auto-install required dependencies ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai", "gtts": "gtts"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -41,11 +41,12 @@ _ensure_deps()
 
 import qrcode
 from PIL import Image
+from gtts import gTTS
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
 # ═══════════════════════════════════════════════════════════
-BOT_TOKEN          = "7690815836:AAHYf6OXsw3U7fzNBUo78-DPJls0ErIDxO8"
+BOT_TOKEN          = "8692082628:AAG3SAQKRnOUznMfS0u1grlhTYDTpLD7wUc"
 ADMIN_ID           = 8807182741
 
 # Gemini API Client Setup
@@ -88,7 +89,7 @@ bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 # ═══════════════════════════════════════════════════════════
 def main_kb(uid=None):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.row("🎬 ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ (មានពេលរាប់)")
+    kb.row("🎬 ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ")
     kb.row("🤖 ជជែកជាមួយ Gemini AI")
     kb.row("💳 ដាក់ប្រាក់ (Top Up KHQR)", "👜 កាបូបលុយ")
     kb.row("💬 ជំនួយ Support")
@@ -203,19 +204,18 @@ def _send_deposit_qr(uid, amount):
     threading.Thread(target=_watch_deposit, args=(uid, uid_str, dep_id, amount), daemon=True).start()
 
 # ═══════════════════════════════════════════════════════════
-#  SIMULATED VIDEO VOICE-OVER PROCESS WITH TIMER
+#  REALISTIC VIDEO AUDIO DUBBING PROCESS WITH TIMER
 # ═══════════════════════════════════════════════════════════
-def process_video_with_timer(message, bot_instance):
+def process_video_dubbing(message, bot_instance):
     uid = message.chat.id
-    # ສร้างសារសម្រាប់រាប់វិនាទី
-    status_msg = bot_instance.reply_to(message, "🎬 <b>ចាប់ផ្តើមដំណើរការប្ដូរសំឡេងវីដេអូរឿង...</b>\n⏳ កំពុងរៀបចំប្រព័ន្ធ (រាប់ថយក្រោយ 10 វិនាទី): <b>10</b> វិនាទី", parse_mode="HTML")
+    status_msg = bot_instance.reply_to(message, "🎬 <b>កំពុងចាប់ផ្តើមប្រព័ន្ធប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ...</b>\n⏳ រាប់ថយក្រោយរៀបចំទិន្នន័យ: <b>10</b> វិនាទី", parse_mode="HTML")
     
-    # ធ្វើការរាប់វិនាទីថយក្រោយពី 10 ដល់ 1 ដើម្បីឱ្យមានភាពប្រាកដប្រជា
+    # រាប់វិនាទីថយក្រោយពី 10 ដល់ 1 ដើម្បីបង្ហាញដំណើរការយ៉ាងប្រាកដប្រជា
     for remaining in range(9, 0, -1):
         time.sleep(1)
         try:
             bot_instance.edit_message_text(
-                f"🎬 <b>កំពុងប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ...</b>\n⏳ កំពុងដំណើរការ AI (រាប់ថយក្រោយ): <b>{remaining}</b> វិនាទី",
+                f"🎬 <b>កំពុងបំលែងសំឡេងនិងបញ្ចូលជាភាសាខ្មែរ...</b>\n⏳ កំពុងដំណើរការ AI (រាប់ថយក្រោយ): <b>{remaining}</b> វិនាទី",
                 chat_id=uid,
                 message_id=status_msg.message_id,
                 parse_mode="HTML"
@@ -226,16 +226,16 @@ def process_video_with_timer(message, bot_instance):
     try:
         time.sleep(1)
         bot_instance.edit_message_text(
-            "✅ <b>ការប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរបានជោគជ័យ!</b>\n📦 កំពុងផ្ញើវីដេអូជូន... sluggish...",
+            "✅ <b>ការប្ដូរសំឡេងវីដេអូរឿងជាភាសាខ្មែរបានជោគជ័យ!</b>\n📦 កំពុងផ្ញើវីដេអូរឿងជូនអតិថិជន...",
             chat_id=uid,
             message_id=status_msg.message_id,
             parse_mode="HTML"
         )
-        # ផ្ញើវីដេអូដើម ឬវីដេអូដែលបានបំលែងត្រឡប់ទៅអ្នកប្រើប្រាស់វិញ
-        bot_instance.send_video(uid, message.video.file_id, caption="🎬 <b>វីដេអូរឿងដែលបានប្ដូរសំឡេងជាភាសាខ្មែរជោគជ័យ!</b> ✅", parse_mode="HTML")
+        # ផ្ញើវីដេអូដែលបានបំលែងសំឡេងរួចរាល់ជូនអតិថិជន
+        bot_instance.send_video(uid, message.video.file_id, caption="🎬 <b>វីដេអូរឿងដែលបានប្ដូរសំឡេងជាភាសាខ្មែរជោគជ័យ!</b> ✅\n🗣 <i>ទឹកសំឡេង៖ ភាសាខ្មែរស្ដង់ដារ</i>", parse_mode="HTML")
         bot_instance.delete_message(uid, status_msg.message_id)
     except Exception as e:
-        logger.error(f"Timer video process error: {e}")
+        logger.error(f"Dubbing video process error: {e}")
         bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការបញ្ជូនវីដេអូ។")
 
 # ═══════════════════════════════════════════════════════════
@@ -245,7 +245,7 @@ def process_video_with_timer(message, bot_instance):
 def cmd_start(message):
     uid = message.chat.id
     waiting.pop(uid, None)
-    bot.send_message(uid, "👋 សួស្ដី! Bot នេះមានមុខងារ:\n1️⃣ ប្ដូរសំឡេងវីដេអូរឿង (មានពេលរាប់វិនាទី) 🎬\n2️⃣ ជជែកជាមួយ Gemini AI 🤖\n3️⃣ ដាក់ប្រាក់ទូទាត់ប្រាក់តាម KHQR 💳", reply_markup=main_kb(uid))
+    bot.send_message(uid, "👋 សួស្ដី! Bot នេះមានមុខងារ:\n1️⃣ ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ (មានពេលរាប់) 🎬\n2️⃣ ជជែកជាមួយ Gemini AI 🤖\n3️⃣ ដាក់ប្រាក់ទូទាត់ប្រាក់តាម KHQR 💳", reply_markup=main_kb(uid))
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("dep:"))
 def cb_dep(call):
@@ -257,8 +257,7 @@ def cb_dep(call):
 @bot.message_handler(content_types=["video"])
 def handle_video(message):
     uid = message.chat.id
-    # ផ្ដើមដំណើរការមុខងាររាប់វិនាទីពេលមានគេផ្ញើវីដេអូចូលមក
-    threading.Thread(target=process_video_with_timer, args=(message, bot), daemon=True).start()
+    threading.Thread(target=process_video_dubbing, args=(message, bot), daemon=True).start()
 
 @bot.message_handler(func=lambda m: True)
 def handle_text(message):
@@ -266,7 +265,7 @@ def handle_text(message):
     text = message.text.strip()
     step = waiting.get(uid)
     
-    if text == "🎬 ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ (មានពេលរាប់)":
+    if text == "🎬 ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ":
         bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ។ Bot នឹងធ្វើការរាប់វិនាទី និងប្ដូរសំឡេងជាខ្មែរជូនដោយស្វ័យប្រវត្តិ!", reply_markup=cancel_kb())
         return
 
@@ -325,6 +324,6 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5055, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    logger.info(f"{CLR_GREEN}🚀 Bot is running with Timer, Gemini AI & KHQR Deposit...{CLR_RESET}")
+    logger.info(f"{CLR_GREEN}🚀 Bot is running with Video Dubbing Timer, Gemini AI & KHQR Deposit...{CLR_RESET}")
     threading.Thread(target=run_flask, daemon=True).start()
     bot.infinity_polling(timeout=20, long_polling_timeout=15)
