@@ -4,3 +4,4 @@ flask
 qrcode
 pillow
 google-genai
+gtts
