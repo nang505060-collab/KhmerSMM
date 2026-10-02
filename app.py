@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║     Kairozen Bot - Movie Voiceover to Khmer & KHQR Deposit   ║
+║     Kairozen Bot - Gemini AI Chat & KHQR Deposit             ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -14,11 +14,10 @@ from telebot.types import (
 from flask import Flask, request as flask_request, jsonify
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from google import genai
 
 # ─── COLOR CONSTANTS FOR TERMINAL ───
 CLR_RESET   = "\033[0m"
-CLR_BOLD    = "\033[1m"
-CLR_RED     = "\033[91m"
 CLR_GREEN   = "\033[92m"
 CLR_YELLOW  = "\033[93m"
 CLR_CYAN    = "\033[96m"
@@ -32,7 +31,7 @@ logger.addHandler(console_handler)
 
 # ─── Auto-install required dependencies ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "gtts": "gtts", "moviepy": "moviepy", "speech_recognition": "SpeechRecognition"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -42,9 +41,6 @@ _ensure_deps()
 
 import qrcode
 from PIL import Image
-from gtts import gTTS
-import speech_recognition as sr
-from moviepy import VideoFileClip, AudioFileClip
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
@@ -52,7 +48,11 @@ from moviepy import VideoFileClip, AudioFileClip
 BOT_TOKEN          = "8692082628:AAG3SAQKRnOUznMfS0u1grlhTYDTpLD7wUc"
 ADMIN_ID           = 8807182741
 
-# Bakong KHQR (រក្សាទុកមុខងារដាក់លុយ)
+# Gemini API Client Setup
+GEMINI_API_KEY     = "AQ.Ab8RN6L1Makc_uagHIDBQ0OkGrNuIQNeUXIWqoYITMVLe4PAkw"
+ai_client          = genai.Client(api_key=GEMINI_API_KEY)
+
+# Bakong KHQR
 BAKONG_TOKEN       = "rbkMVUSQPooaey51jm1cD5ECnzmHyeNX7fBX4Afc16GU8k"
 BANK_ACCOUNT       = "samnang_mon@bkrt"
 MERCHANT_NAME      = "Khmer SMM"
@@ -82,14 +82,13 @@ store_deps   = _load(STORE_DEP_FILE, {})
 waiting      = {}
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
-http = http_req.Session()
 
 # ═══════════════════════════════════════════════════════════
 #  KEYBOARDS
 # ═══════════════════════════════════════════════════════════
 def main_kb(uid=None):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.row("🎬 翻訳 / ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ")
+    kb.row("🤖 ជជែកជាមួយ Gemini AI")
     kb.row("💳 ដាក់ប្រាក់ (Top Up KHQR)", "👜 កាបូបលុយ")
     kb.row("💬 ជំនួយ Support")
     return kb
@@ -203,79 +202,13 @@ def _send_deposit_qr(uid, amount):
     threading.Thread(target=_watch_deposit, args=(uid, uid_str, dep_id, amount), daemon=True).start()
 
 # ═══════════════════════════════════════════════════════════
-#  MOVIE AUDIO TRANSLATOR & VOICEOVER
-# ═══════════════════════════════════════════════════════════
-def process_movie_voiceover(message, bot_instance):
-    uid = message.chat.id
-    msg = bot_instance.reply_to(message, "⏳ កំពុងទាញយកវីដេអូ និងដំណើរការប្ដូរសំឡេងជាភាសាខ្មែរ... សូមរង់ចាំបន្តិច។")
-    
-    input_video_path = f"input_{uid}.mp4"
-    output_audio_path = f"audio_{uid}.wav"
-    khmer_audio_path = f"khmer_{uid}.mp3"
-    output_video_path = f"output_khmer_{uid}.mp4"
-
-    try:
-        file_info = bot_instance.get_file(message.video.file_id)
-        downloaded_file = bot_instance.download_file(file_info.file_path)
-        
-        with open(input_video_path, "wb") as f:
-            f.write(downloaded_file)
-            
-        # 1. ស្រង់សំឡេងចេញពីវីដេអូ
-        video_clip = VideoFileClip(input_video_path)
-        if video_clip.audio is not None:
-            video_clip.audio.write_audiofile(output_audio_path, logger=None)
-            
-            # 2. ស្ដាប់សំឡេងដើម (Speech Recognition)
-            r = sr.Recognizer()
-            if os.path.exists(output_audio_path):
-                with sr.AudioFile(output_audio_path) as source:
-                    audio_data = r.record(source)
-                    try:
-                        text_en = r.recognize_google(audio_data, language="en-US")
-                    except:
-                        text_en = "This is a translated movie story in Khmer language."
-            else:
-                text_en = "Movie story content."
-        else:
-            text_en = "Movie story content without original audio."
-                
-        # 3. បង្កើតសំឡេងនិយាយភាសាខ្មែរថ្មី (gTTS)
-        khmer_text = f"សាច់រឿង៖ {text_en} (បានប្ដូរមកជាសំឡេងភាសាខ្មែរដោយស្វ័យប្រវត្តិ)"
-        tts = gTTS(text=khmer_text, lang='km', slow=False)
-        tts.save(khmer_audio_path)
-        
-        # 4. បញ្ចូលសំឡេងខ្មែរជំនួសចូលវីដេអូដើម
-        new_audio = AudioFileClip(khmer_audio_path)
-        final_video = video_clip.set_audio(new_audio)
-        final_video.write_videofile(output_video_path, codec="libx264", audio_codec="aac", logger=None)
-        
-        # ផ្ញើវីដេអូជូនអតិថិជន
-        with open(output_video_path, "rb") as vid:
-            bot_instance.send_video(uid, vid, caption="🎬 វីដេអូរឿងដែលបានប្ដូរសំឡេងជាភាសាខ្មែរជោគជ័យ! ✅")
-            
-        bot_instance.delete_message(uid, msg.message_id)
-    except Exception as e:
-        logger.error(f"Movie voiceover error: {e}")
-        try:
-            bot_instance.edit_message_text("❌ មានបញ្ហាក្នុងការបំលែងវីដេអូ សូមពិនិត្យមើលទ្រង់ទ្រាយវីដេអូ ឬព្យាយាមម្ដងទៀត។", chat_id=uid, message_id=msg.message_id)
-        except:
-            bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការបំលែងវីដេអូ។")
-    finally:
-        # សម្អាត File កាកសំណល់ទាំងអស់
-        for p in [input_video_path, output_audio_path, khmer_audio_path, output_video_path]:
-            if os.path.exists(p):
-                try: os.remove(p)
-                except: pass
-
-# ═══════════════════════════════════════════════════════════
 #  BOT HANDLERS
 # ═══════════════════════════════════════════════════════════
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
     uid = message.chat.id
     waiting.pop(uid, None)
-    bot.send_message(uid, "👋 សួស្ដី! Bot នេះមានមុខងារ:\n1️⃣ ប្ដូរសំឡេងវីដេអូរឿងជាភាសាខ្មែរ 🎬\n2️⃣ ដាក់ប្រាក់ទូទាត់ប្រាក់តាម KHQR 💳", reply_markup=main_kb(uid))
+    bot.send_message(uid, "👋 សួស្ដី! Bot នេះមានមុខងារ:\n1️⃣ ជជែកឆ្លើយឆ្លងជាមួយ Gemini AI 🤖\n2️⃣ ដាក់ប្រាក់ទូទាត់ប្រាក់តាម KHQR 💳", reply_markup=main_kb(uid))
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("dep:"))
 def cb_dep(call):
@@ -284,18 +217,33 @@ def cb_dep(call):
     bot.answer_callback_query(call.id)
     _send_deposit_qr(uid, amount)
 
-@bot.message_handler(content_types=["video"])
-def handle_video(message):
-    uid = message.chat.id
-    threading.Thread(target=process_movie_voiceover, args=(message, bot), daemon=True).start()
-
 @bot.message_handler(func=lambda m: True)
 def handle_text(message):
     uid = message.chat.id
     text = message.text.strip()
+    step = waiting.get(uid)
     
-    if text == "🎬 翻訳 / ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ":
-        bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ ដើម្បីឱ្យ Bot ចាត់ការប្ដូរសំឡេងជាភាសាខ្មែរជូន។", reply_markup=cancel_kb())
+    if text == "🤖 ជជែកជាមួយ Gemini AI":
+        waiting[uid] = "chat_ai"
+        bot.send_message(uid, "💬 ឥឡូវนี้អ្នកអាចសួរ ឬជជែកជាមួយ Gemini AI បានហើយ! (ផ្ញើសារមកខាងក្រោម):\n\n<i>ចុចប៊ូតុង Cancel ដើម្បីឈប់</i>", parse_mode="HTML", reply_markup=cancel_kb())
+        return
+
+    if step == "chat_ai":
+        if text in ("✕ Cancel", "❌ Cancel"):
+            waiting.pop(uid, None)
+            bot.send_message(uid, "🏠 ត្រឡប់មកម៉ឺនុយដើម", reply_markup=main_kb(uid))
+            return
+            
+        try:
+            # ហៅប្រើប្រាស់ Gemini API
+            response = ai_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=text,
+            )
+            bot.send_message(uid, response.text, parse_mode="HTML")
+        except Exception as e:
+            logger.error(f"Gemini API Error: {e}")
+            bot.send_message(uid, "❌ មានបញ្ហាក្នុងការតភ្ជាប់ទៅកាន់ Gemini AI។")
         return
         
     if text in ("💳 ដាក់ប្រាក់ (Top Up KHQR)", "💳 ដាក់ប្រាក់"):
@@ -331,6 +279,6 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5055, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    logger.info(f"{CLR_GREEN}🚀 Bot is running with Movie Voiceover & KHQR Deposit...{CLR_RESET}")
+    logger.info(f"{CLR_GREEN}🚀 Bot is running with Gemini AI & KHQR Deposit...{CLR_RESET}")
     threading.Thread(target=run_flask, daemon=True).start()
     bot.infinity_polling(timeout=20, long_polling_timeout=15)
