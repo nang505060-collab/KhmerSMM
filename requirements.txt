@@ -3,6 +3,4 @@ requests
 flask
 qrcode
 pillow
-gtts
-moviepy
-SpeechRecognition
+google-genai
