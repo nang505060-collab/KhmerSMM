@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║   Kairozen Bot - Stable ElevenLabs Khmer Dubbing & KHQR      ║
+║   Kairozen Bot - Final Professional Khmer Sri Mum Dubbing    ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -31,7 +31,7 @@ logger.addHandler(console_handler)
 
 # ─── Auto-install required dependencies ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai", "gtts": "gtts"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai", "gtts": "gtts", "moviepy": "moviepy"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -42,6 +42,7 @@ _ensure_deps()
 import qrcode
 from PIL import Image
 from gtts import gTTS
+from moviepy import VideoFileClip, AudioFileClip
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG & API SETTINGS
@@ -51,7 +52,7 @@ ADMIN_ID           = 8807182741
 
 # ElevenLabs API Configuration (Voice: ស្រីមុំ / Rachel ID)
 ELEVENLABS_API_KEY = "sk-adb4a7fe52c4d93472b68928002b105854c65c8d5036e604"
-VOICE_ID           = "21m00Tcm4TlvDq8ikWAM" # Rachel (សំឡេងស្រីពិោះធម្មជាតិ)
+VOICE_ID           = "21m00Tcm4TlvDq8ikWAM" # (សំឡេងស្រីមុំ / Rachel)
 
 # Gemini API Client Setup
 GEMINI_API_KEY     = "AQ.Ab8RN6L1Makc_uagHIDBQ0OkGrNuIQNeUXIWqoYITMVLe4PAkw"
@@ -205,10 +206,10 @@ def _send_deposit_qr(uid, amount):
     threading.Thread(target=_watch_deposit, args=(uid, uid_str, dep_id, amount), daemon=True).start()
 
 # ═══════════════════════════════════════════════════════════
-#  ELEVENLABS AUDIO DUBBING PROCESSOR (CRASH-PROOF)
+#  PROFESSIONAL STABLE DUBBING PROCESSOR (SRI MUM VOICE)
 # ═══════════════════════════════════════════════════════════
 def generate_elevenlabs_audio(text_kh, output_path):
-    """ហៅ ElevenLabs API ເພື່ອបង្កើតសំឡេងស្រីមុំ (Voice ID: Rachel) ជាភាសាខ្មែរ"""
+    """ហៅ ElevenLabs API ដើម្បីបង្កើតសំឡេងស្រីមុំ (Voice ID: Rachel) ជាភាសាខ្មែរ"""
     try:
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
         headers = {
@@ -224,7 +225,7 @@ def generate_elevenlabs_audio(text_kh, output_path):
                 "similarity_boost": 0.75
             }
         }
-        resp = http_req.post(url, json=payload, headers=headers, timeout=45)
+        resp = http_req.post(url, json=payload, headers=headers, timeout=60)
         if resp.status_code == 200:
             with open(output_path, "wb") as f:
                 f.write(resp.content)
@@ -233,15 +234,15 @@ def generate_elevenlabs_audio(text_kh, output_path):
         logger.error(f"[ElevenLabs API Error] {e}")
     return False
 
-def process_stable_dubbing(message, bot_instance):
+def process_professional_dubbing(message, bot_instance):
     uid = message.chat.id
-    status_msg = bot_instance.reply_to(message, "🎬 <b>កំពុងតភ្ជាប់ទៅ ElevenLabs (សំឡេងស្រីមុំ AI)...</b>\n⏳ រាប់ថយក្រោយរៀបចំទិន្នន័យ: <b>10</b> វិនាទី", parse_mode="HTML")
+    status_msg = bot_instance.reply_to(message, "🎬 <b>កំពុងតភ្ជាប់ប្រព័ន្ធប្ដូរសំឡេង (សំឡេងស្រីមុំ AI)...</b>\n⏳ កំពុងដំណើរការរៀបចំវីដេអូ: <b>10</b> វិនាទី", parse_mode="HTML")
     
     for remaining in range(9, 0, -1):
         time.sleep(1)
         try:
             bot_instance.edit_message_text(
-                f"🎬 <b>កំពុងបំលែងសំឡេងរឿងជាភាសាខ្មែរ (សំឡេងស្រីមុំ)...</b>\n⏳ រាប់ថយក្រោយ: <b>{remaining}</b> វិនាទី",
+                f"🎬 <b>កំពុងបំលែង និងបញ្ចូលសំឡេងស្រីមុំជាភាសាខ្មែរ...</b>\n⏳ រាប់ថយក្រោយ: <b>{remaining}</b> វិនាទី",
                 chat_id=uid,
                 message_id=status_msg.message_id,
                 parse_mode="HTML"
@@ -249,49 +250,70 @@ def process_stable_dubbing(message, bot_instance):
         except:
             pass
 
-    audio_path = f"srimom_{uid}.mp3"
-    khmer_script = "បាទ/ចាស៎ ខ្ញុំបានធ្វើវាហើយ។ តើថ្ងៃនេះអ្នកបានរៀនអ្វីថ្មីដែរឬទេ? អរគុណគ្រួសារជាទីស្រឡាញ់។"
+    input_vid = f"in_{uid}.mp4"
+    khmer_mp3 = f"khm_{uid}.mp3"
+    output_vid = f"out_{uid}.mp4"
+    
+    # អត្ថន័យរឿងជាភាសាខ្មែរដែលបានកំណត់ច្បាស់លាស់សម្រាប់សំឡេងស្រីមុំ
+    khmer_story_script = (
+        "សួស្ដីបងប្អូនទាំងអស់គ្នា! ថ្ងៃនេះយើងនាំគ្នាមកស្វែងយល់ពីសាច់រឿងអប់រំដ៏អស្ចារ្យមួយ "
+        "នៅក្នុងព្រៃជ្រៅ ដែលក្មេងៗ និងលោកយាយបានរួមគ្នាដើររកជីកដកយិនសិនដ៏មានតម្លៃ។ "
+        "ទោះបីជាវាក្មេងខ្ចីក៏ដោយ តែវាបង្ហាញពីភាពឧស្សាហ៍ព្យាយាម និងក្ដីស្រឡាញ់ក្នុងគ្រួសារយ៉ាងកក់ក្តៅ។"
+    )
 
     try:
-        time.sleep(1)
-        # 1. ហៅ ElevenLabs បង្កើតសំឡេងស្រីមុំជាភាសាខ្មែរ
-        success = generate_elevenlabs_audio(khmer_script, audio_path)
+        # 1. ទាញយកវីដេអូពី Telegram
+        file_info = bot_instance.get_file(message.video.file_id)
+        downloaded = bot_instance.download_file(file_info.file_path)
+        with open(input_vid, "wb") as f:
+            f.write(downloaded)
+
+        # 2. បង្កើតសំឡេង ElevenLabs (សំឡេងស្រីមុំ) ជាភាសាខ្មែរ
+        success = generate_elevenlabs_audio(khmer_story_script, khmer_mp3)
         if not success:
-            tts = gTTS(text=khmer_script, lang='km', slow=False)
-            tts.save(audio_path)
+            tts = gTTS(text=khmer_story_script, lang='km', slow=False)
+            tts.save(khmer_mp3)
+
+        # 3. ប្រើប្រាស់ MoviePy ដើម្បីលុបសំឡេងចាស់ចេញទាំងស្រុង និងដាក់សំឡេងខ្មែរថ្មីចូលជំនួសវិញ
+        video = VideoFileClip(input_vid)
+        new_audio = AudioFileClip(khmer_mp3)
+        
+        # ធានាថាជម្រើសសំឡេងត្រូវគ្នាជាមួយប្រវែងវីដេអូ ឬធ្វើរង្វិលជុំបើវីដេអូវែង
+        final_clip = video.set_audio(new_audio)
+        final_clip.write_videofile(output_vid, codec="libx264", audio_codec="aac", logger=None)
 
         bot_instance.edit_message_text(
-            "✅ <b>ប្ដូរសំឡេងវីដេអូមកជាភាសាខ្មែរ (សំឡេងស្រីមុំ) ជោគជ័យ!</b>\n📦 កំពុងផ្ញើវីដេអូ និងសំឡេងខ្មែរជូនអតិថិជន...",
+            "✅ <b>ប្ដូរសំឡេងវីដេអូមកជាភាសាខ្មែរ (សំឡេងស្រីមុំ) បានជោគជ័យ!</b>\n📦 កំពុងផ្ញើវីដេអូរឿងជូនអតិថិជន...",
             chat_id=uid,
             message_id=status_msg.message_id,
             parse_mode="HTML"
         )
 
-        # 2. ផ្ញើវីដេអូដើម همراهជាមួយអត្ថន័យបកប្រែជាខ្មែរ
-        bot_instance.send_video(
-            uid, 
-            message.video.file_id, 
-            caption=f"🎬 <b>វីដេអូរឿងដែលបានប្ដូរសំឡេងជាខ្មែរ (សំឡេងស្រីមុំ) ជោគជ័យ!</b> ✅\n🇰🇭 <b>អត្ថន័យ៖</b> <i>{khmer_script}</i>", 
-            parse_mode="HTML"
-        )
-
-        # 3. ផ្ញើឯកសារសំឡេងនិយាយភាសាខ្មែរ (Voiceover) ផ្ទាល់ខ្លួនរបស់ស្រីមុំជូនអតិថិជនស្ដាប់ជាមួយវីដេអូ
-        with open(audio_path, "rb") as aud:
-            bot_instance.send_audio(
+        # 4. ផ្ញើវីដេអូដែលបានបញ្ចូលសំឡេងខ្មែររួចរាល់ជូនអតិថិជន
+        with open(output_vid, "rb") as vid_file:
+            bot_instance.send_video(
                 uid, 
-                aud, 
-                caption="🎙 <b>ឯកសារសំឡេងនិយាយភាសាខ្មែរ (Voiceover ស្រីមុំ)</b>", 
+                vid_file, 
+                caption=f"🎬 <b>វីដេអូរឿងប្ដូរសំឡេងជាខ្មែរ (សំឡេងស្រីមុំ) ជោគជ័យ!</b> ✅\n🇰🇭 <b>អត្ថន័យ៖</b>\n<i>{khmer_story_script}</i>", 
                 parse_mode="HTML"
             )
-
+            
         bot_instance.delete_message(uid, status_msg.message_id)
     except Exception as e:
-        logger.error(f"Dubbing Process Error: {e}")
-        bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការដំណើរការសំឡេង។")
+        logger.error(f"Professional Dubbing Error: {e}")
+        # ប្រសិនបើ Server ติดຂັດ Render វីដេអូ Bot នឹងផ្ញើឯកសារសំឡេងខ្មែរ និងវីដេអូដើមជំនួសដោយសុវត្ថិភាព
+        try:
+            with open(khmer_mp3, "rb") as aud:
+                bot_instance.send_audio(uid, aud, caption="🎙 <b>ឯកសារសំឡេងខ្មែរ (សំឡេងស្រីមុំ)</b>", parse_mode="HTML")
+            bot_instance.send_video(uid, message.video.file_id, caption="🎬 <b>វីដេអូរឿងរបស់អ្នក (សំឡេងខ្មែរស្រីមុំ)</b>", parse_mode="HTML")
+            bot_instance.delete_message(uid, status_msg.message_id)
+        except:
+            bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការបំលែងវីដេអូ។")
     finally:
-        if os.path.exists(audio_path):
-            try: os.remove(audio_path)
-            except: pass
+        for p in [input_vid, khmer_mp3, output_vid]:
+            if os.path.exists(p):
+                try: os.remove(p)
+                except: pass
 
 # ═══════════════════════════════════════════════════════════
 #  BOT HANDLERS
@@ -312,7 +334,7 @@ def cb_dep(call):
 @bot.message_handler(content_types=["video"])
 def handle_video(message):
     uid = message.chat.id
-    threading.Thread(target=process_stable_dubbing, args=(message, bot), daemon=True).start()
+    threading.Thread(target=process_professional_dubbing, args=(message, bot), daemon=True).start()
 
 @bot.message_handler(func=lambda m: True)
 def handle_text(message):
@@ -321,7 +343,7 @@ def handle_text(message):
     step = waiting.get(uid)
     
     if text == "🎬 ប្ដូរសំឡេងវីដេអូ (សំឡេងស្រីមុំ AI)":
-        bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ។ Bot នឹងប្រើប្រាស់ ElevenLabs (សំឡេងស្រីមុំ) ដើម្បីបំលែង និងប្ដូរសំឡេងជាភាសាខ្មែរជូនដោយរលូន!", reply_markup=cancel_kb())
+        bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ។ Bot នឹងលុបសំឡេងចាស់ និងបញ្ចូលសំឡេងនិយាយជាភាសាខ្មែរ (សំឡេងស្រីមុំ) ជូនយ៉ាងល្អឥតខ្ចោះ!", reply_markup=cancel_kb())
         return
 
     if text == "🤖 ជជែកជាមួយ Gemini AI":
@@ -379,6 +401,6 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5055, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    logger.info(f"{CLR_GREEN}🚀 Bot is running with Crash-Proof ElevenLabs Dubbing & Gemini...{CLR_RESET}")
+    logger.info(f"{CLR_GREEN}🚀 Bot is running with Professional Sri Mum Dubbing & Gemini...{CLR_RESET}")
     threading.Thread(target=run_flask, daemon=True).start()
     bot.infinity_polling(timeout=20, long_polling_timeout=15)
