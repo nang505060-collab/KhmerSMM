@@ -1,14 +1,19 @@
 import os
+from flask import Flask, request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 from moviepy.editor import VideoFileClip
 from openai import OpenAI
 
-# ដាក់ Token និង API Key ដែលអ្នកទើបតែទទួលបានទីនេះ
+# យក Token និង API Key របស់អ្នកមកដាក់ទីនេះ
 TELEGRAM_BOT_TOKEN = "7690815836:AAHYf6OXsw3U7fzNBUo78-DPJls0ErIDxO8"
 OPENAI_API_KEY = "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"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+app = Flask(__name__)
+
+# បង្កើត Telegram Application
+telegram_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text("⏳ កំពុងទាញយក និងដំណើរការវីដេអូ... សូមរង់ចាំបន្តិច!")
@@ -20,18 +25,18 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await video_file.download_to_drive(input_video_path)
     
     try:
-        # ជំហានទី 1: ដកសំឡេងចេញពីវីដេអូ
+        # ដកសំឡេងចេញពីវីដេអូ
         video = VideoFileClip(input_video_path)
         video.audio.write_audiofile(audio_path)
         
-        # ជំហានទី 2: ប្រើ Whisper ដើម្បីបម្លែងសំឡេងជាអត្ថបទ (Transcript)
+        # ប្រើ Whisper ដើម្បីបម្លែងសំឡេងជាអត្ថបទ
         with open(audio_path, "rb") as audio_file:
             transcript = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file
             )
         
-        # ជំហានទី 3: បកប្រែអត្ថបទទៅជាភាសាខ្មែរ
+        # បកប្រែអត្ថបទទៅជាភាសាខ្មែរ
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -47,15 +52,23 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ មានបញ្ហាក្នុងការដំណើរការ៖ {str(e)}")
         
     finally:
-        if os.path.exists(input_video_path): os.remove(input_video_path)
-        if os.path.exists(audio_path): os.remove(audio_path)
+        if os.path.exists(input_video_path): os.path.exists(input_video_path) and os.remove(input_video_path)
+        if os.path.exists(audio_path): os.path.exists(audio_path) and os.remove(audio_path)
 
-def main():
-    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+# បន្ថែម Handler សម្រាប់វីដេអូ
+telegram_app.add_handler(MessageHandler(filters.VIDEO, handle_video))
 
-    print("🤖 Bot កំពុងដំណើរការហើយ...")
-    application.run_polling()
+@app.route("/")
+def home():
+    return "Telegram Bot is running smoothly!"
+
+@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+def webhook():
+    # รับ update ពី Telegram Webhook
+    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
+    telegram_app.update_queue.put(update)
+    return "OK"
 
 if __name__ == "__main__":
-    main()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
