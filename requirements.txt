@@ -5,3 +5,5 @@ qrcode
 pillow
 google-genai
 gtts
+SpeechRecognition
+moviepy
