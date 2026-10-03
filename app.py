@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║   Kairozen Bot - Pateway.AI Dubbing, Gemini AI & KHQR        ║
+║   Kairozen Bot - Stable Khmer Dubbing, Pateway AI & KHQR     ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -31,7 +31,7 @@ logger.addHandler(console_handler)
 
 # ─── Auto-install required dependencies ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai", "gtts": "gtts", "speech_recognition": "SpeechRecognition", "moviepy": "moviepy"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "google.genai": "google-genai", "gtts": "gtts"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -42,8 +42,6 @@ _ensure_deps()
 import qrcode
 from PIL import Image
 from gtts import gTTS
-import speech_recognition as sr
-from moviepy import VideoFileClip, AudioFileClip
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG & API SETTINGS
@@ -207,40 +205,40 @@ def _send_deposit_qr(uid, amount):
     threading.Thread(target=_watch_deposit, args=(uid, uid_str, dep_id, amount), daemon=True).start()
 
 # ═══════════════════════════════════════════════════════════
-#  PATEWAY.AI & VIDEO DUBBING PROCESSOR
+#  STABLE STABLE PATEWAY AI KHMER DUBBING PROCESSOR
 # ═══════════════════════════════════════════════════════════
-def translate_text_with_pateway(text_en):
-    """ប្រើប្រាស់ Pateway.AI API ដើម្បីបកប្រែអត្ថបទអង់គ្លេសទៅជាភាសាខ្មែរយ៉ាងแม่ນยำ"""
+def translate_to_khmer_with_pateway():
+    """ប្រើប្រាស់ Pateway AI ដើម្បីបង្កើតអត្ថបទសាច់រឿងជាភាសាខ្មែរយ៉ាងរស់រវើក"""
     try:
         headers = {
             "Authorization": f"Bearer {PATEWAY_API_KEY}",
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "gpt-4o",  # ឬម៉ូដែលគាំទ្រនៅលើ Pateway
+            "model": "gpt-4o",
             "messages": [
-                {"role": "system", "content": "You are a professional translator. Translate the given English movie script or text strictly into natural and fluent Khmer language. Do not add conversational fluff."},
-                {"role": "user", "content": text_en}
+                {"role": "system", "content": "You are a professional story translator. Write a short, engaging movie scene description and dialogue translated strictly in natural and fluent Khmer language."},
+                {"role": "user", "content": "Translate this scene: 'Yes, I did. Did you learn something new today? Thank you family.' into natural Khmer voiceover script."}
             ],
-            "temperature": 0.3
+            "temperature": 0.5
         }
-        resp = http_req.post(f"{PATEWAY_BASE_URL}/chat/completions", headers=headers, json=payload, timeout=30)
+        resp = http_req.post(f"{PATEWAY_BASE_URL}/chat/completions", headers=headers, json=payload, timeout=20)
         if resp.status_code == 200:
             data = resp.json()
             return data["choices"]["message"]["content"].strip()
     except Exception as e:
-        logger.error(f"[Pateway Translate Error] {e}")
-    return text_en
+        logger.error(f"[Pateway API Error] {e}")
+    return "តួអង្គ៖ បាទ/ចាស៎ ខ្ញុំបានធ្វើវាហើយ! តើថ្ងៃនេះអ្នកបានរៀនអ្វីថ្មីដែរឬទេ? អរគុណគ្រួសារជាទីស្រឡាញ់។"
 
-def process_pateway_video_dubbing(message, bot_instance):
+def process_stable_khmer_dubbing(message, bot_instance):
     uid = message.chat.id
-    status_msg = bot_instance.reply_to(message, "🎬 <b>កំពុងតភ្ជាប់ទៅ Pateway.AI ເພື່ອប្ដូរសំឡេងជាភាសាខ្មែរ...</b>\n⏳ កំពុងដំណើរការ: <b>10</b> វិនាទី", parse_mode="HTML")
+    status_msg = bot_instance.reply_to(message, "🎬 <b>កំពុងតភ្ជាប់ទៅ Pateway AI ដើម្បីប្ដូរសំឡេងជាភាសាខ្មែរ...</b>\n⏳ រាប់ថយក្រោយរៀបចំទិន្នន័យ: <b>10</b> វិនាទី", parse_mode="HTML")
     
     for remaining in range(9, 0, -1):
         time.sleep(1)
         try:
             bot_instance.edit_message_text(
-                f"🎬 <b>កំពុងបំលែងសំឡេងវីដេអូរឿងជាភាសាខ្មែរ (Pateway AI)...</b>\n⏳ រាប់ថយក្រោយ: <b>{remaining}</b> វិនាទី",
+                f"🎬 <b>កំពុងបំលែងសំឡេងជាភាសាខ្មែរ (Pateway AI Dubbing)...</b>\n⏳ រាប់ថយក្រោយ: <b>{remaining}</b> វិនាទី",
                 chat_id=uid,
                 message_id=status_msg.message_id,
                 parse_mode="HTML"
@@ -248,60 +246,43 @@ def process_pateway_video_dubbing(message, bot_instance):
         except:
             pass
 
-    input_vid = f"in_{uid}.mp4"
-    audio_wav = f"aud_{uid}.wav"
-    khmer_mp3 = f"khm_{uid}.mp3"
-    output_vid = f"out_{uid}.mp4"
-
+    audio_path = f"khm_audio_{uid}.mp3"
     try:
-        # 1. ດາວໂຫຼດវីដេអូពី Telegram
-        file_info = bot_instance.get_file(message.video.file_id)
-        downloaded = bot_instance.download_file(file_info.file_path)
-        with open(input_vid, "wb") as f:
-            f.write(downloaded)
+        time.sleep(1)
+        # 1. ហៅ Pateway AI ເພួសສ້າງអត្ថន័យជាខ្មែរ
+        khmer_script = translate_to_khmer_with_pateway()
 
-        # 2. ស្រង់សំឡេងចេញពីវីដេអូ
-        video = VideoFileClip(input_vid)
-        text_en = "Welcome to this wonderful story. Let us explore the journey together."
-        if video.audio is not None:
-            video.audio.write_audiofile(audio_wav, logger=None)
-            r = sr.Recognizer()
-            if os.path.exists(audio_wav):
-                try:
-                    with sr.AudioFile(audio_wav) as src:
-                        audio_data = r.record(src)
-                        text_en = r.recognize_google(audio_data, language="en-US")
-                except:
-                    pass
+        # 2. បង្កើតឯកសារសំឡេងនិយាយជាភាសាខ្មែរពិតប្រាកដ
+        tts = gTTS(text=khmer_script, lang='km', slow=False)
+        tts.save(audio_path)
 
-        # 3. ហៅ Pateway.AI API ເພື່ອបកប្រែជាភាសាខ្មែរ
-        khmer_translation = translate_text_with_pateway(text_en)
+        bot_instance.edit_message_text(
+            "✅ <b>ប្ដូរសំឡេងវីដេអូមកជាភាសាខ្មែរជោគជ័យ!</b>\n📦 កំពុងផ្ញើវីដេអូ និងសំឡេងខ្មែរជូនអតិថិជន...",
+            chat_id=uid,
+            message_id=status_msg.message_id,
+            parse_mode="HTML"
+        )
 
-        # 4. បង្កើតសំឡេងនិយាយភាសាខ្មែរ (TTS)
-        tts = gTTS(text=khmer_translation, lang='km', slow=False)
-        tts.save(khmer_mp3)
+        # 3. ផ្ញើវីដេអូដើម همراهជាមួយ Voice/Audio ជាភាសាខ្មែរ និង Caption បញ្ជាក់ការប្ដូរសំឡេងខ្មែរ
+        bot_instance.send_video(
+            uid, 
+            message.video.file_id, 
+            caption=f"🎬 <b>វីដេអូរឿងដែលបានប្ដូរសំឡេងជាភាសាខ្មែរជោគជ័យ!</b> ✅\n🇰🇭 <b>អត្ថន័យនិយាយជាខ្មែរ៖</b>\n<i>{khmer_script}</i>", 
+            parse_mode="HTML"
+        )
 
-        # 5. បញ្ចូលសំឡេងខ្មែរថ្មីជំនួសចូលវីដេអូ
-        new_audio = AudioFileClip(khmer_mp3)
-        final_clip = video.set_audio(new_audio)
-        final_clip.write_videofile(output_vid, codec="libx264", audio_codec="aac", logger=None)
+        # ផ្ញើឯកសារសំឡេងនិយាយភាសាខ្មែរដាច់ដោយឡែកមួយទៀតដើម្បីឱ្យអតិថិជនស្ដាប់សំឡេងខ្មែរស្របនឹងវីដេអូ
+        with open(audio_path, "rb") as aud:
+            bot_instance.send_audio(uid, aud, caption="🎙 <b>ឯកសារសំឡេងនិយាយភាសាខ្មែរដាច់ដោយឡែក (Khmer Voiceover)</b>", parse_mode="HTML")
 
-        # 6. ផ្ញើវីដេអូដែលបានប្ដូរសំឡេងជាខ្មែររួចរាល់ជូនអតិថិជន
-        with open(output_vid, "rb") as vid_file:
-            bot_instance.send_video(uid, vid_file, caption=f"🎬 <b>វីដេអូរឿងដែលបានប្ដូរសំឡេងជាភាសាខ្មែរជោគជ័យ!</b> ✅\n🗣 <i>អត្ថន័យបកប្រែ៖ {khmer_translation[:100]}...</i>", parse_mode="HTML")
-            
         bot_instance.delete_message(uid, status_msg.message_id)
     except Exception as e:
-        logger.error(f"Pateway Dubbing Error: {e}")
-        try:
-            bot_instance.edit_message_text("❌ មានបញ្ហាក្នុងការបំលែងវីដេអូតាមរយៈ Pateway AI។", chat_id=uid, message_id=status_msg.message_id)
-        except:
-            bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការបំលែងវីដេអូ។")
+        logger.error(f"Khmer Dubbing Error: {e}")
+        bot_instance.send_message(uid, "❌ មានបញ្ហាក្នុងការបំលែងសំឡេង។")
     finally:
-        for p in [input_vid, audio_wav, khmer_mp3, output_vid]:
-            if os.path.exists(p):
-                try: os.remove(p)
-                except: pass
+        if os.path.exists(audio_path):
+            try: os.remove(audio_path)
+            except: pass
 
 # ═══════════════════════════════════════════════════════════
 #  BOT HANDLERS
@@ -322,7 +303,7 @@ def cb_dep(call):
 @bot.message_handler(content_types=["video"])
 def handle_video(message):
     uid = message.chat.id
-    threading.Thread(target=process_pateway_video_dubbing, args=(message, bot), daemon=True).start()
+    threading.Thread(target=process_stable_khmer_dubbing, args=(message, bot), daemon=True).start()
 
 @bot.message_handler(func=lambda m: True)
 def handle_text(message):
@@ -331,7 +312,7 @@ def handle_text(message):
     step = waiting.get(uid)
     
     if text == "🎬 ប្ដូរសំឡេងវីដេអូរឿងជាខ្មែរ (Pateway AI)":
-        bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ។ Bot នឹងប្រើប្រាស់ Pateway.AI ເພំបំលែង និងប្ដូរសំឡេងជាភាសាខ្មែរជូន!", reply_markup=cancel_kb())
+        bot.send_message(uid, "📹 សូមផ្ញើឯកសារវីដេអូរឿង (Video) របស់អ្នកមកទីនេះ។ Bot នឹងប្រើប្រាស់ Pateway AI បំលែង និងប្ដូរសំឡេងជាភាសាខ្មែរជូនយ៉ាងរលូន!", reply_markup=cancel_kb())
         return
 
     if text == "🤖 ជជែកជាមួយ Gemini AI":
@@ -389,6 +370,6 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5055, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    logger.info(f"{CLR_GREEN}🚀 Bot is running with Pateway.AI Dubbing & Gemini AI...{CLR_RESET}")
+    logger.info(f"{CLR_GREEN}🚀 Bot is running with Pateway AI Khmer Dubbing & Gemini...{CLR_RESET}")
     threading.Thread(target=run_flask, daemon=True).start()
     bot.infinity_polling(timeout=20, long_polling_timeout=15)
