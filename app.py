@@ -4,7 +4,7 @@ from flask import Flask, request
 from openai import OpenAI
 
 # ដាក់ Token និង API Key របស់អ្នកទីនេះ
-TELEGRAM_BOT_TOKEN = "7690815836:AAHYf6OXsw3U7fzNBUo78-DPJls0ErIDxO8"
+TELEGRAM_BOT_TOKEN = "7690815836:AAE3IdIrevWkjbjWiJVRSV_0vU6LUTOf2to"
 OPENAI_API_KEY = "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"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
