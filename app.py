@@ -3,37 +3,62 @@ import requests
 from flask import Flask, request
 from openai import OpenAI
 
-# ដាក់ Token និង API Key របស់អ្នកទីនេះ
 TELEGRAM_BOT_TOKEN = "7690815836:AAE3IdIrevWkjbjWiJVRSV_0vU6LUTOf2to"
 OPENAI_API_KEY = "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"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 app = Flask(__name__)
 
-def send_telegram_message(chat_id, text):
+def send_telegram_message_with_buttons(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
+    
+    # បង្កើតប៊ូតុងអន្តរកម្ម (Inline Keyboards)
+    keyboard = {
+        "inline_keyboard": [
+            [{"text": "📥 ដាក់វីដេអូចូល", "callback_data": "upload_video"}],
+            [{"text": "▶️ ដំណើរការវីដេអូ", "callback_data": "process_video"}],
+            [{"text": "⏹️ បញ្ចប់វីដេអូ", "callback_data": "finish_video"}]
+        ]
+    }
+    
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "reply_markup": keyboard
+    }
     requests.post(url, json=payload)
 
 @app.route("/")
 def home():
-    print("Health check endpoint accessed.")
-    return "Telegram Bot Webhook is running successfully!"
+    return "Telegram Bot Webhook with buttons is running!"
 
 @app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def webhook():
     try:
         data = request.get_json(force=True)
-        print(f"Received data: {data}")
         
-        # ពិនិត្យមើលថាតើมีសារ ឬវីដេអូផ្ញើមកដែរឬទេ
+        # ករណីអ្នកប្រើប្រាស់ចុចលើប៊ូតុង (Callback Query)
+        if "callback_query" in data:
+            query = data["callback_query"]
+            chat_id = query["message"]["chat"]["id"]
+            callback_data = query["data"]
+            
+            if callback_data == "upload_video":
+                send_telegram_message_with_buttons(chat_id, "📥 សូមផ្ញើឯកសារវីដេអូរបស់អ្នកចូលមកទីនេះដើម្បីចាប់ផ្តើម។")
+            elif callback_data == "process_video":
+                send_telegram_message_with_buttons(chat_id, "▶️ កំពុងដំណើរការបកប្រែវីដេអូ... សូមរង់ចាំបន្តិច!")
+            elif callback_data == "finish_video":
+                send_telegram_message_with_buttons(chat_id, "⏹️ ការដំណើរការត្រូវបានបញ្ចប់ដោយជោគជ័យ!")
+            return "OK", 200
+
+        # ករណីអ្នកប្រើប្រាស់ផ្ញើវីដេអូចូលមកផ្ទាល់
         if "message" in data and "video" in data["message"]:
             chat_id = data["message"]["chat"]["id"]
             file_id = data["message"]["video"]["file_id"]
             
-            send_telegram_message(chat_id, "⏳ កំពុងទទួលបានវីដេអូ... សូមរង់ចាំបន្តិច!")
+            send_telegram_message_with_buttons(chat_id, "⏳ បានទទួលវីដេអូរបស់អ្នកហើយ! សូមជ្រើសរើសប៊ូតុងខាងក្រោម៖")
             
-            # ទាញយក Link ឯកសារពី Telegram
+            # ទាញយកវីដេអូ និងដំណើរការ AI (Whisper + GPT-4o)
             file_info_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
             file_info_res = requests.get(file_info_url).json()
             
@@ -41,7 +66,6 @@ def webhook():
                 file_path = file_info_res["result"]["file_path"]
                 download_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
                 
-                # ဒោនឡូតវីដេអូទុករយៈពេលខ្លី
                 video_bytes = requests.get(download_url).content
                 input_video_path = "input_video.mp4"
                 audio_path = "audio.mp3"
@@ -49,19 +73,13 @@ def webhook():
                 with open(input_video_path, "wb") as f:
                     f.write(video_bytes)
                 
-                # ទាញយកសំឡេងចេញពីវីដេអូ (ប្រើ MoviePy)
                 from moviepy.editor import VideoFileClip
                 video = VideoFileClip(input_video_path)
                 video.audio.write_audiofile(audio_path)
                 
-                # បម្លែងសំឡេងទៅជាអត្ថបទជាមួយ Whisper
                 with open(audio_path, "rb") as audio_file:
-                    transcript = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file
-                    )
+                    transcript = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
                 
-                # បកប្រែអត្ថបទទៅជាភាសាខ្មែរជាមួយ GPT-4o
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
@@ -71,17 +89,14 @@ def webhook():
                 )
                 khmer_text = response.choices[0].message.content
                 
-                # ផ្ញើលទ្ធផលអត្ថបទបកប្រែត្រឡប់ទៅ Telegram វិញ
-                send_telegram_message(chat_id, f"✅ បានបកប្រែរួចរាល់!\n\nអត្ថបទបកប្រែជាភាសាខ្មែរ៖\n\n{khmer_text}")
+                # ផ្ញើលទ្ធផលអត្ថបទបកប្រែជាមួយប៊ូតុងបង្ហាញបន្ថែម
+                send_telegram_message_with_buttons(chat_id, f"✅ អត្ថបទបកប្រែជាភាសាខ្មែរ៖\n\n{khmer_text}")
                 
-                # លុបឯកសារបណ្តោះអាសន្នចេញ
                 for p in [input_video_path, audio_path]:
                     if os.path.exists(p): os.remove(p)
-            else:
-                send_telegram_message(chat_id, "❌ មិនអាចទាញយកឯកសារវីដេអូបានទេ។")
-                
+                    
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
+        print(f"Error: {str(e)}")
         
     return "OK", 200
 
