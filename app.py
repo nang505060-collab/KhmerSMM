@@ -12,7 +12,6 @@ app = Flask(__name__)
 def send_telegram_message_with_buttons(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     
-    # បង្កើតប៊ូតុងអន្តរកម្ម (Inline Keyboards)
     keyboard = {
         "inline_keyboard": [
             [{"text": "📥 ដាក់វីដេអូចូល", "callback_data": "upload_video"}],
@@ -30,14 +29,14 @@ def send_telegram_message_with_buttons(chat_id, text):
 
 @app.route("/")
 def home():
-    return "Telegram Bot Webhook with buttons is running!"
+    return "Telegram Bot Webhook is running!"
 
 @app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def webhook():
     try:
         data = request.get_json(force=True)
         
-        # ករណីអ្នកប្រើប្រាស់ចុចលើប៊ូតុង (Callback Query)
+        # 1. ករណីអ្នកប្រើប្រាស់ចុចលើប៊ូតុងអន្តរកម្ម (Inline Buttons)
         if "callback_query" in data:
             query = data["callback_query"]
             chat_id = query["message"]["chat"]["id"]
@@ -51,14 +50,21 @@ def webhook():
                 send_telegram_message_with_buttons(chat_id, "⏹️ ការដំណើរការត្រូវបានបញ្ចប់ដោយជោគជ័យ!")
             return "OK", 200
 
-        # ករណីអ្នកប្រើប្រាស់ផ្ញើវីដេអូចូលមកផ្ទាល់
+        # 2. ករណីអ្នកប្រើប្រាស់ផ្ញើសារ ឬពាក្យបញ្ជា /start
+        if "message" in data and "text" in data["message"]:
+            chat_id = data["message"]["chat"]["id"]
+            text = data["message"]["text"]
+            if text == "/start":
+                send_telegram_message_with_buttons(chat_id, "👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Bot បកប្រែវីដេអូ។ សូមជ្រើសរើសប៊ូតុងខាងក្រោម ឬផ្ញើវីដេអូរបស់អ្នកចូលមកដើម្បីចាប់ផ្តើម៖")
+            return "OK", 200
+
+        # 3. ករណីผู้ใช้งานផ្ញើវីដេអូចូលមកផ្ទាល់
         if "message" in data and "video" in data["message"]:
             chat_id = data["message"]["chat"]["id"]
             file_id = data["message"]["video"]["file_id"]
             
-            send_telegram_message_with_buttons(chat_id, "⏳ បានទទួលវីដេអូរបស់អ្នកហើយ! សូមជ្រើសរើសប៊ូតុងខាងក្រោម៖")
+            send_telegram_message_with_buttons(chat_id, "⏳ បានទទួលវីដេអូរបស់អ្នកហើយ! កំពុងដំណើរការទាញយក និងបកប្រែ...")
             
-            # ទាញយកវីដេអូ និងដំណើរការ AI (Whisper + GPT-4o)
             file_info_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
             file_info_res = requests.get(file_info_url).json()
             
@@ -89,7 +95,6 @@ def webhook():
                 )
                 khmer_text = response.choices[0].message.content
                 
-                # ផ្ញើលទ្ធផលអត្ថបទបកប្រែជាមួយប៊ូតុងបង្ហាញបន្ថែម
                 send_telegram_message_with_buttons(chat_id, f"✅ អត្ថបទបកប្រែជាភាសាខ្មែរ៖\n\n{khmer_text}")
                 
                 for p in [input_video_path, audio_path]:
