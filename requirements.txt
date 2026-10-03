@@ -1,8 +1,4 @@
-pyTelegramBotAPI
-requests
-flask
-qrcode
-pillow
-google-genai
-gtts
+python-telegram-bot
+openai
 moviepy
+requests
