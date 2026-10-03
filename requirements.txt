@@ -1,5 +1,4 @@
-python-telegram-bot
+flask
+requests
 openai
 moviepy
-requests
-flask
